@@ -80,8 +80,8 @@ public class CacheManager {
                  var inputStream = zipFile.getInputStream(zipFile.entries().nextElement());
                  var in = new ObjectInputStream(inputStream)){
                 return in.readObject();
-                } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (IOException e) {
+                return null;
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -126,11 +126,20 @@ public class CacheManager {
 
     public Object get(){
         Object res = null;
-        if (this.cacheType == CacheType.MEMORY || this.cacheType == CacheType.BOTH){
+        if (this.cacheType == CacheType.MEMORY){
             res = memoryCache.getOrDefault(this.key, null);
-        }
-        if (this.cacheType == CacheType.FILE || (res == null && this.cacheType == CacheType.BOTH)){
+        } else if (this.cacheType == CacheType.FILE) {
             res = fromFile();
+        } else if (this.cacheType == CacheType.BOTH) {
+            res = memoryCache.getOrDefault(this.key, null);
+            if (res == null)
+            {
+                res = fromFile();
+                if (res != null)
+                {
+                    memoryCache.put(this.key, res);
+                }
+            }
         }
         return res;
     }
